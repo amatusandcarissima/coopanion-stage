@@ -1,0 +1,55 @@
+{
+  "name": "cortico-world-stage",
+  "version": "0.1.0",
+  "description": "Coo 看片与打字：感知前台视频窗口与输入框，把「能坐到哪儿」写成 pet_move_to 可照抄的参数（只在本机读取窗口标题/矩形，不读输入内容）。",
+  "type": "module",
+  "main": "./src/index.js",
+  "license": "MIT",
+  "keywords": [
+    "cortico",
+    "cortico-world",
+    "world",
+    "companion",
+    "desktop-pet",
+    "windows",
+    "coopanion"
+  ],
+  "os": [
+    "win32"
+  ],
+  "engines": {
+    "node": ">=22"
+  },
+  "files": [
+    "src",
+    "assets",
+    "ENV_PROMPT.md",
+    "README.md",
+    "describe.json"
+  ],
+  "cortico": {
+    "kind": "world",
+    "api": 6,
+    "displayName": "看片与打字",
+    "icon": "assets/icon.png",
+    "describe": "describe.json",
+    "tags": [
+      "apps",
+      "experimental",
+      "sensitive-data"
+    ],
+    "locales": {
+      "zh": {
+        "displayName": "看片与打字",
+        "description": "看视频时 Coo 能爬到画面边缘坐下陪看；你在任何应用里打字时，她会凑到输入框下面。只读窗口标题和输入框位置，不读你打了什么。"
+      },
+      "en": {
+        "displayName": "Watch & Type",
+        "description": "Coo can climb onto the video area while you watch, and hop to the input box while you type in any app. Reads window titles and rects only — never your keystrokes."
+      }
+    }
+  },
+  "dependencies": {
+    "koffi": "3.3.1"
+  }
+}

@@ -1,0 +1,115 @@
+{
+  "tools": [
+    {
+      "name": "stage_status",
+      "description": "查看桌面现在在干什么：前台窗口、输入框/视频区域和可用的落点。你想「走到某个位置再摆姿势」、或要确认坐到哪儿时调用。",
+      "tags": [
+        "read"
+      ],
+      "parameters": {
+        "type": "object",
+        "additionalProperties": false,
+        "properties": {}
+      },
+      "summary": {
+        "zh": "当前前台窗口、视频/输入框区域和可照抄的落点",
+        "en": "Foreground window, video/input rects and ready-to-use landing coordinates"
+      }
+    },
+    {
+      "name": "stage_probe",
+      "description": "开发者探针：返回当前一次完整采样 JSON（前台窗口、显示器、视频矩形、输入框矩形、宠物是否因全屏隐藏）。用于不开 UI 验证感知。",
+      "tags": [
+        "read"
+      ],
+      "parameters": {
+        "type": "object",
+        "additionalProperties": false,
+        "properties": {}
+      },
+      "summary": {
+        "zh": "完整采样 JSON：前台窗口 / 视频 / 输入框 / 全屏隐藏",
+        "en": "Full sensing snapshot JSON"
+      }
+    },
+    {
+      "name": "stage_check",
+      "description": "检查「对用户做反应」的开关（watchEnabled/typingEnabled，默认关），以及宠物是否会因全屏被隐藏。她自己看视频/打字做动作由提示词驱动，没有开关。",
+      "tags": [
+        "read"
+      ],
+      "parameters": {
+        "type": "object",
+        "additionalProperties": false,
+        "properties": {}
+      },
+      "summary": {
+        "zh": "开关状态与全屏隐藏检查",
+        "en": "Switches and fullscreen-hide check"
+      }
+    },
+    {
+      "name": "stage_locate",
+      "description": "截图并定位当前输入框（或视频画面），返回屏幕矩形和可直接照抄的 pet_move_to 落点。视频落点是画面底边左下角或右下角。做任何动作前先调用。",
+      "tags": [
+        "read"
+      ],
+      "parameters": {
+        "type": "object",
+        "additionalProperties": false,
+        "properties": {
+          "kind": {
+            "type": "string",
+            "enum": [
+              "input",
+              "video"
+            ],
+            "description": "定位对象：input = 输入框（默认），video = 视频画面。"
+          },
+          "saveShot": {
+            "type": "boolean",
+            "description": "是否把截图保存到 <dataDir>/logs/stage-shots/（默认 true，只存本地）。"
+          }
+        }
+      },
+      "summary": {
+        "zh": "截图定位输入框/视频并给可照抄落点",
+        "en": "Screenshot + locate input/video and give a copy-ready landing point"
+      }
+    }
+  ],
+  "events": [
+    {
+      "type": "stage.watch",
+      "description": {
+        "zh": "可选（默认关）：检测到前台在放视频时发出，正文带 pet_move_to {to:\"watch\"} 的可照抄参数。注意：这是「对用户看视频做反应」，默认关闭；她自己的看/打字动作由环境提示词驱动。",
+        "en": "Optional (off by default): fires when a video plays in the foreground. Her own watch/type poses are prompt-driven."
+      },
+      "trigger": "debounce"
+    },
+    {
+      "type": "stage.typing",
+      "description": {
+        "zh": "可选（默认关）：检测到用户在输入框打字时发出，正文带 pet_move_to {to:\"type\"} 的可照抄参数。默认关闭。",
+        "en": "Optional (off by default): fires when the user types in an input box."
+      },
+      "trigger": "debounce"
+    },
+    {
+      "type": "stage.leave",
+      "description": {
+        "zh": "可选：视频窗口消失 / 输入框失焦时发出，提示 pet_move_to {to:\"floor\"}。默认关闭。",
+        "en": "Optional: video gone / focus left."
+      },
+      "trigger": "debounce"
+    }
+  ],
+  "prompts": [
+    {
+      "key": "worlds.stage.envPrompt",
+      "title": "做动作（看视频 / 打字）系统提示词",
+      "role": "envPrompt",
+      "content": "# 做动作（看视频 / 打字）—— 强制规则\n\n世界开关：{{stageStatus}}。舞台尺寸（页面像素，左上角为原点）：{{stageDisplay}}。\n\n你的身体必须配合「你」正在做的事做动作——不是可选装饰，也不去看用户在干什么。\n\n## 硬性规则（无条件遵守）\n\n1. **必须做动作，不允许跳过**：只要你要用电脑输入文字，或要看视频，就必须先做动作。没有「想不想」「可选」的余地。\n2. **顺序固定，先动作后打字**：① `stage_locate` 定位 → ② `pet_move_to` 移动（**等它返回，返回即代表移动完成**）→ ③ `pet_act` 摆好姿势 → ④ **这之后才**真正开始输入文字 / 看视频。\n3. **不许穿插**：不允许把「打字」和「移动 / 摆姿势」交错进行；动作必须一次完整做完，再开始输入。\n4. **结束后必须结束动作**：`pet_act {actions:[\"起身\"]}`（或 `pet_move_to {to:\"floor\"}` 回桌面底部）。不许一直待在原地。\n5. 动作会「保持到下一个动作」：开始做一次、结束起身一次即可，中间不用重复。做动作时保持安静，不要用 `pet_say` 说自己正在看 / 正在打。\n\n## 第一步永远是定位：`stage_locate`\n\n不要自己猜坐标。要坐到输入框 / 视频画面前，先调用：\n\n- `stage_locate {kind:\"input\"}` —— 截图并定位当前输入框，返回 `rect`（屏幕像素矩形）、`fractions` 和可直接照抄的 `suggestion`（形如 `pet_move_to {to:\"type\", params:[0.52, 0.74]}`）。\n- `stage_locate {kind:\"video\"}` —— 定位前台浏览器里的视频画面，`suggestion` 用 `to:\"watch\"`，落点是**视频底边的左下角或右下角**（她会坐在视频下边缘、身体落在角落）。\n\n`source` 说明可信度：`uia`/`caret` 是真实元素，`heuristic` 是估计值；`notes` 里带「（估计值）」就按估计处理。定位失败（`ok:false`）时先别动，等用户或下一轮再试；也可以退一步只做就地姿势。\n\n## 打字：先到输入框坐下，再敲，最后必须起身\n\n1. 你要用电脑输入文字前（比如用户让你在某个输入框写东西），先 `stage_locate {kind:\"input\"}`。\n2. 拿到 `suggestion` 就照抄调用 `pet_move_to {to:\"type\", params:[x,y]}` —— 她会跑到**真实输入框**的下边缘坐下。**等它返回**，代表她已经到位。\n3. 然后做打字姿势：`pet_act {actions:[\"打字\"]}`（站着、两只爪子抬到胸前交替敲，偶尔抬头看）。\n4. **以上动作完整做完之后**，才开始真正输入文字（`pet_cua_type` / `pet_cua_key` / 浏览器填字等）。动作没做完之前不许开始打字。\n5. **输入结束后必须结束动作**：`pet_act {actions:[\"起身\"]}`；想直接回桌面底部也可以 `pet_move_to {to:\"floor\"}`。\n\n## 看视频：先爬到视频角落，再看，最后必须起身\n\n1. 要看视频时，先 `stage_locate {kind:\"video\"}`。\n2. 照抄 `suggestion`：`pet_move_to {to:\"watch\", params:[x,y]}` —— 她会爬到**视频左下角或右下角**坐下（`suggestion` 已按屏幕留白选好一侧，照抄即可）。**等它返回**，代表她已经到位。\n3. 然后做观看姿势：`pet_act {actions:[\"坐着看\"]}`（她会坐在视频底边、脸朝视频中心看）。\n4. **以上动作完整做完之后**，才开始看视频。\n5. **看完 / 暂停 / 关掉后必须结束动作**：`pet_act {actions:[\"起身\"]}`（或 `pet_move_to {to:\"floor\"}` 回桌面底部）。\n\n**输入完文字 / 看完视频后，必须结束动作（起身或回桌面），不要一直待在原地。**\n\n## 用户自己看 / 打字时（默认关，不要主动过去）\n\n用户自己看视频 / 打字时，**不要**跑过去做动作；除非用户明确说「过去看 / 过去陪」才过去。\n\n## 落点参数说明\n\n`pet_move_to` 目标（{{stageMoveTargets}}）：`watch`（坐到视频底边左下/右下角看）、`type`（坐到输入框下沿打字）、`floor`（回桌面底部）、`near`（站到某点）。\n`params` 必须是 `[x, y]` 两个数：`x` = 屏幕横向比例 0~1（0 最左 1 最右），`y` = 落座高度比例 0~1（0 屏幕顶 1 屏幕底）。\n`stage_locate` 的 `suggestion` 已经算好这两个数，直接照抄；不要自己改格式、不要只给一个数、不要编造别的 `to` 值。想随时确认环境可以调 `stage_status`。\n\n如果 `pet_move_to {to:\"watch\"}` 或 `{to:\"type\"}` 报「没执行 / to 不认识」：说明当前形象不是 `whale-stage`，先 `pet_set {figure:\"whale-stage\"}` 再重试一次（只重试一次）。本地探针：{{stageProbePort}}。\n"
+    }
+  ]
+}

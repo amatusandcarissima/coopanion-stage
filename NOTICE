@@ -1,0 +1,22 @@
+coopanion-stage — Coopanion 桌宠「舞台动作」扩展包
+=================================================
+
+版权与出处
+
+1. whale-stage 形象包（pack/）
+   派生自 Coopanion 内置的「DeepSeek 大肥鱼」（随 cortico-world-desktop-pet
+   包发布，作者 Pal-AI-Lab，AGPL-3.0-or-later）。
+   pack/ 下的部件贴图（tex/、feat/、schemes/、outfits/、thumbs/）、
+   model.json 与 whale.js 均复制/派生自原包，按 AGPL-3.0-or-later 授权。
+   原作者致谢（详见 pack/figure.json 的 credits 字段）：
+   - 角色原设：婧月（上善无形）
+   - DeepSeek 女仆二创：ZipZipPipe
+   - 舞台动作扩展：DSH for Amatus
+
+2. World 扩展（world/）
+   全新代码，MIT 授权（见 world/LICENSE）。
+
+3. 其余脚本与文档（tools/、docs/、*.ps1、README.md、NOTICE 等）
+   与形象包同仓库，按 AGPL-3.0-or-later 授权。
+
+完整 AGPL-3.0 许可证文本见 LICENSE。
