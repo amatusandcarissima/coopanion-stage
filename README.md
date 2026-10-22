@@ -275,7 +275,7 @@ coopanion-stage\
 
 | 看 B 站时爬到画面角落坐下看 | 记事本打字时坐在文本区下沿 |
 |---|---|
-| ![](shots/watch-corner-left.png) | ![](shots/typing-notepad.png) |
+| ![](docs/shots/watch-corner-left.png) | ![](docs/shots/typing-notepad.png) |
 
 ---
 
